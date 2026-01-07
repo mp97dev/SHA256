@@ -1,0 +1,1 @@
+/home/runner/work/SHA256/.codeql-scratch/dbs/cpp/working/autobuild/bin/cc -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/client.dir/link.d CMakeFiles/client.dir/src/client.c.o CMakeFiles/client.dir/src/sha256_utils.c.o -o client  /usr/lib/x86_64-linux-gnu/libcrypto.so -lpthread
