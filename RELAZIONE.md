@@ -205,7 +205,7 @@ Tempo: ~1 secondo (incluso build e startup)
 #### Test 2: File con Password (`test/password.txt`)
 ```
 Contenuto: "VeryToughPassword123!@🚀"
-Dimensione: 26 byte
+Dimensione: 26 byte (22 byte ASCII + 4 byte UTF-8 per emoji 🚀)
 SHA-256 atteso: 7eb03520f980bcd651a8d4a876a86afd4a5e98488e2b8b298dd984b625e7999e
 Risultato: ✅ PASS - Digest corretto, gestione corretta di caratteri UTF-8
 Tempo: ~1 secondo
@@ -314,7 +314,7 @@ typedef struct cache_entry {
 ### 5.2 Miglioramenti di Sicurezza
 
 #### 5.2.1 Aggiornamento API OpenSSL
-**Problema attuale**: Il codice usa API deprecate di OpenSSL 3.0 (`SHA256_Init`, `SHA256_Update`, `SHA256_Final`).
+**Problema attuale**: Il codice usa le API legacy (`SHA256_Init`, `SHA256_Update`, `SHA256_Final`) che sono state deprecate in favore dell'interfaccia EVP in OpenSSL 3.0.
 
 **Soluzione proposta**:
 - Migrare alla nuova EVP API di OpenSSL 3.0:
