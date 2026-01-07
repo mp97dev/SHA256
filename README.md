@@ -12,5 +12,5 @@ Features:
 ```bash
 ./run_test.sh [path/to/file.txt]
 ```
-If no file is provided, the default is `test/test_files/testfile.txt`.
+If no file is provided, the default is `test/testfile.txt`.
 
