@@ -23,14 +23,14 @@ typedef struct {
 
 
 // Initialize the queue
-void init(queue_t *q);
+void queue_init(queue_t *q);
 // Destroy the queue and free all memory
-void destroy(queue_t *q);
+void queue_destroy(queue_t *q);
 // Insert a request into the queue, ordered by filesize (ascending)
-void push(queue_t *q, sha256_request_t *req, off_t filesize);
+void queue_push(queue_t *q, sha256_request_t *req, off_t filesize);
 // Pop the request with the smallest filesize from the queue (blocking if empty)
-int pop(queue_t *q, sha256_request_t *req, off_t *filesize);
+int queue_pop(queue_t *q, sha256_request_t *req, off_t *filesize);
 // Returns 1 if the queue is empty, 0 otherwise
-int is_empty(queue_t *q);
+int queue_is_empty(queue_t *q);
 
 #endif // QUEUE_H 
