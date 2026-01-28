@@ -7,7 +7,7 @@ Features:
 - **Flexible Testing**: Pass any file path to `run_test.sh` to test different files.
 - **Cache Query**: The client can query the server's cache for previously computed hashes.
 
-## Quick Start
+## Quick test
 
 ```bash
 ./run_test.sh [path/to/file.txt]

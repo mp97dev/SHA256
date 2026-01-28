@@ -14,10 +14,11 @@
  * @return 0 on success, -1 on failure.
 */
 int sha256_digest_file(const char *filename, char *out_digest) {
-    const size_t HASH_SIZE = 32; // SHA-256 outputs 32 bytes
-    const size_t BUFFER_SIZE = 4096; // Use a larger buffer for efficiency
+    const size_t HASH_SIZE = 32;
+    const size_t BUFFER_SIZE = 4096;
     unsigned char hash[HASH_SIZE];
-    SHA256_CTX ctx;
+    SHA256_CTX ctx = {0};
+
     SHA256_Init(&ctx);
     char buffer[BUFFER_SIZE];
     int file = open(filename, O_RDONLY);
@@ -26,6 +27,7 @@ int sha256_digest_file(const char *filename, char *out_digest) {
         return -1;
     }
     ssize_t bytes_read;
+    
     // Read the file in blocks and update the SHA256 context
     do {
         bytes_read = read(file, buffer, BUFFER_SIZE);
@@ -37,12 +39,15 @@ int sha256_digest_file(const char *filename, char *out_digest) {
             return -1;
         }
     } while (bytes_read > 0);
+
     SHA256_Final(hash, &ctx);
     close(file);
+
     // Convert the binary digest to a hexadecimal string
     for (size_t i = 0; i < HASH_SIZE; i++) {
         sprintf(out_digest + (i * 2), "%02x", hash[i]);
     }
     out_digest[HASH_SIZE * 2] = '\0';
+
     return 0;
 } 

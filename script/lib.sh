@@ -10,7 +10,7 @@ else
 fi
 
 log_step()    { printf "%b[➡] %s%b\n"   "$CYAN$BOLD" "$1" "$RESET"; }
-log_info()    { printf "%b[ℹ] %s%b\n"   "$BLUE" "$1" "$RESET"; }
+log_info()    { printf "%b\n[ℹ] %s%b\n"   "$BLUE" "$1" "$RESET"; }
 log_success() { printf "%b[✔] %s%b\n"   "$GREEN" "$1" "$RESET"; }
 log_warn()    { printf "%b[⚠] %s%b\n"   "$YELLOW" "$1" "$RESET"; }
 log_error()   { printf "%b[✖] %s%b\n"   "$RED$BOLD" "$1" "$RESET"; }
