@@ -23,7 +23,6 @@ La struttura delle cartelle è la seguente
 │   ├── common.h
 │   ├── queue.h
 │   └── sha256_utils.h
-├── relazione.md
 ├── run_test.sh
 ├── script
 │   └── lib.sh
