@@ -1,0 +1,315 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[italian]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+
+% Configurazione stile codice discreto
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    backgroundcolor=\color{gray!5},
+    frame=none,
+    rulecolor=\color{gray!20},
+    keywordstyle=\color{blue},
+    commentstyle=\color{gray},
+    stringstyle=\color{red},
+    showstringspaces=false,
+    breakatwhitespace=true,
+    captionpos=b,
+    aboveskip=8pt,
+    belowskip=8pt
+}
+
+\title{Servizio Client-Server SHA-256\\con Cache e Coda Prioritaria}
+\author{Michele Pasetto}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduzione}
+
+Il progetto si prospetta l'implementazione di un servizio client-server per la computazione dell'hash SHA-256 di un file. L'architettura si basa su comunicazione tramite FIFO, gestione concorrente delle richieste mediante thread e cache condivisa, per ottimizzare le prestazioni ed una coda ordinata per dimensione del file.
+
+L'obiettivo principale è dimostrare l'utilizzo efficace di:
+\begin{itemize}
+    \item \textbf{Comunicazione interprocesso} tramite FIFO
+    \item \textbf{Sincronizzazione} con mutex e variabili di condizione
+    \item \textbf{Thread} per gestione concorrente
+    \item \textbf{Cache} per evitare calcoli ridondanti
+    \item \textbf{Schedulazione prioritaria} basata sulla dimensione del file
+\end{itemize}
+
+\section{Contenuto dei file}
+
+La struttura delle cartelle è la seguente:
+
+\begin{small}
+\begin{verbatim}
+.
++-- CMakeLists.txt
++-- README.md
++-- dist
++-- include
+|   +-- cache.h
+|   +-- common.h
+|   +-- queue.h
+|   +-- sha256_utils.h
++-- relazione.md
++-- run_test.sh
++-- script
+|   +-- lib.sh
++-- src
+|   +-- cache.c
+|   +-- client.c
+|   +-- queue.c
+|   +-- server.c
+|   +-- sha256_utils.c
++-- test
+    +-- emptyfile.txt
+    +-- password.txt
+    +-- testfile.txt
+\end{verbatim}
+\end{small}
+
+\begin{center}
+\begin{tabular}{|c|l|}
+\hline
+\textbf{Path} & \textbf{Descrizione} \\
+\hline
+\texttt{dist} & Viene usata per inserire i compilati \\
+\hline
+\texttt{include} & Contiene gli header files (.h) con definizioni di strutture e prototipi \\
+\hline
+\texttt{script} & Contiene script bash utili per la compilazione e il testing \\
+\hline
+\texttt{src} & Contiene i codici sorgente (.c) del progetto \\
+\hline
+\texttt{test} & Contiene i file di test usati per debug e unit tests \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsection{Descrizione dei file principali}
+
+\subsubsection{File sorgente (src/)}
+\begin{itemize}
+    \item \textbf{client.c}: Implementa il client che invia richieste di hash al server tramite FIFO
+    \item \textbf{server.c}: Implementa il server multi-thread che gestisce le richieste
+    \item \textbf{queue.c}: Implementa la coda prioritaria thread-safe ordinata per dimensione file
+    \item \textbf{cache.c}: Implementa la cache condivisa con sincronizzazione per evitare calcoli duplicati
+    \item \textbf{sha256\_utils.c}: Funzioni di utilità per calcolo SHA-256 usando OpenSSL
+\end{itemize}
+
+\subsubsection{File header (include/)}
+\begin{itemize}
+    \item \textbf{common.h}: Definizioni comuni (strutture dati, costanti, macro) usate da client e server
+    \item \textbf{queue.h}: Interfaccia della coda prioritaria
+    \item \textbf{cache.h}: Interfaccia della cache condivisa
+    \item \textbf{sha256\_utils.h}: Prototipo per calcolo SHA-256
+\end{itemize}
+
+\section{Requisiti}
+
+\subsection{Librerie necessarie}
+\begin{itemize}
+    \item \textbf{OpenSSL} (libssl-dev): per il calcolo dell'hash SHA-256
+    \item \textbf{pthread}: per gestione thread pool e sincronizzazione
+    \item \textbf{CMake} ($\geq$ 3.10): per compilazione automatica
+\end{itemize}
+
+\subsection{Installazione dipendenze}
+\begin{lstlisting}[language=bash]
+# Ubuntu/Debian
+sudo apt-get install libssl-dev cmake build-essential
+\end{lstlisting}
+
+\section{Compilazione}
+
+Il progetto utilizza CMake per la compilazione automatica:
+
+\begin{lstlisting}[language=bash]
+mkdir -p dist
+cd dist
+cmake ..
+make
+\end{lstlisting}
+
+Questo produce due eseguibili:
+\begin{itemize}
+    \item \texttt{dist/server}: il server multi-thread
+    \item \texttt{dist/client}: il client
+\end{itemize}
+
+\section{Esecuzione}
+
+\subsection{Avvio del server}
+
+Il server deve essere avviato prima dei client:
+
+\begin{lstlisting}[language=bash]
+$ cd dist
+$ ./server
+>
+[SERVER] Listening on /tmp/sha256_req_fifo
+\end{lstlisting}
+
+\subsection{Esecuzione del client}
+
+\subsubsection{Richiesta di hash per un file}
+\begin{lstlisting}[language=bash]
+$ ./client path/to/file.txt
+>
+SHA-256: a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3
+\end{lstlisting}
+
+\subsubsection{Query della cache}
+\begin{lstlisting}[language=bash]
+./client CACHE?
+\end{lstlisting}
+
+Il server stamperà su stdout il contenuto corrente della cache.
+
+\section{Testing}
+
+\subsection{Unit tests automatici}
+
+Subito dopo aver iniziato a sviluppare questo progetto, mi sono accorto della lentezza di sviluppo, soprattutto per via della necessità di avviare manualmente il server e poi il client per ogni test. Per questo motivo ho creato uno script bash \texttt{run\_test.sh} che automatizza l'intero processo di compilazione, avvio del server, esecuzione dei test e verifica dei risultati usando la libreria sha256sum. Questo mi ha permesso di velocizzare notevolmente il ciclo di sviluppo e debugging, permetterndomi anche di usare più file di test in modo semplice.
+
+Lo script \texttt{run\_test.sh} esegue automaticamente:
+\begin{enumerate}
+    \item Compilazione dei file sorgenti
+    \item Avvio del server in background
+    \item Esecuzione dei test del client usando i file nella cartella \texttt{/test}
+    \item Verifica correttezza hash tramite confronto con \texttt{sha256sum}
+    \item Terminazione del server
+\end{enumerate}
+
+Esecuzione:
+\begin{lstlisting}[language=bash]
+$ ./run_test.sh test/testfile.txt
+>
+[*] CMake building
+-- Configuring done (0.1s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/ginkgo/VR495361_Pasetto_Michele_sha256_service/dist
+[OK] dist completed
+[*] Starting server
+
+[i] Server started with PID 7384
+[SERVER] Listening on /tmp/sha256_req_fifo
+[*] Running client tests for multiple files
+
+[i] Submitting file to server: test/testfile.txt
+    SHA-256: a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3
+[OK] Digest matches CLI
+[OK] All tests completed successfully
+\end{lstlisting}
+
+\subsection{Test di concorrenza}
+
+Per testare richieste concorrenti:
+\begin{lstlisting}[language=bash]
+# In terminali separati dopo aver avviato il server
+./dist/client test/testfile.txt &
+./dist/client test/password.txt &
+./dist/client test/emptyfile.txt &
+\end{lstlisting}
+
+Il sistema gestisce correttamente:
+\begin{itemize}
+    \item \textbf{Richieste concorrenti} per file diversi (parallelismo tramite thread pool)
+    \item \textbf{Richieste duplicate} per lo stesso file (sincronizzazione tramite cache)
+\end{itemize}
+
+\section{Dettagli implementativi}
+
+\subsection{Architettura del sistema}
+
+\subsubsection{Thread Pool (server.c)}
+Un pool di \textbf{4 thread worker} sempre attivi permette ad ogni thread di estrarre la richieste dalla coda prioritaria.
+
+\subsubsection{Coda prioritaria (queue.c)}
+La coda è una lista ordinata per dimensione del file, dando priorità ai lavori ``leggeri'', ovvero i file di dimensioni ridotte. Un mutex e una condition variable gestiscono i thread. \texttt{queue\_push()} inserisce il job al posto giusto, \texttt{queue\_pop()} aspetta finché c'è qualcosa e poi lo consegna al primo thread libero.
+
+\subsubsection{Cache condivisa (cache.c)}
+\begin{itemize}
+    \item Lista concatenata di entry con \textbf{mutex e condition variable per entry}
+    \item \texttt{cache\_lookup\_or\_insert()}: cerca o crea entry atomicamente
+    \item \texttt{cache\_set\_digest()}: aggiorna risultato e notifica thread in attesa
+    \item Permette a thread multipli di attendere lo stesso calcolo
+\end{itemize}
+
+\subsubsection{Comunicazione FIFO}
+\begin{itemize}
+    \item \textbf{FIFO request}: \texttt{/tmp/sha256\_req\_fifo} (globale, write-only per client)
+    \item \textbf{FIFO response}: \texttt{/tmp/sha256\_resp\_<PID>\_fifo} (per client, create dal client stesso)
+\end{itemize}
+
+\subsubsection{Calcolo SHA-256 (sha256\_utils.c)}
+\begin{itemize}
+    \item Usa API OpenSSL: \texttt{SHA256\_Init()}, \texttt{SHA256\_Update()}, \texttt{SHA256\_Final()}
+    \item Lettura file a blocchi di 4096 byte
+    \item Conversione digest binario (32 byte) in stringa hex (64 caratteri)
+\end{itemize}
+
+\subsection{Gestione errori}
+\begin{itemize}
+    \item Controllo apertura file e FIFO
+    \item Verifica lettura/scrittura completa
+    \item Log errori
+    \item Status code nelle risposte: 0=success, 1=error, 3=cache hit
+\end{itemize}
+
+\section{Note}
+
+\subsection{Scelte progettuali}
+\begin{itemize}
+    \item \textbf{FIFO in /tmp}: facilita l'eliminazione di file temporanei generati durante l'esecuzione
+    \item \textbf{Client rimuove FIFO risposta}: evita accumulo di file temporanei
+    \item \textbf{Lettura file a blocchi}: efficiente per file grandi
+    \item \textbf{Thread pool fisso}: evita overhead creazione/distruzione thread
+    \item \textbf{Cache con mutex per ogni entry}: massimizza parallelismo tra calcoli diversi
+\end{itemize}
+
+\subsection{Limitazioni note}
+\begin{itemize}
+    \item Cache illimitata: potrebbe crescere indefinitamente, non vi è un sistema per rimuovere quelle già inserite (potrebbe utilizzare un concetto di ``data di scadenza'')
+    \item Nessuna autenticazione client
+    \item FIFO può saturarsi con molti client simultanei
+\end{itemize}
+
+\subsection{Possibili estensioni per un utilizzo intensivo}
+\begin{itemize}
+    \item Implementare cache LRU con dimensione massima
+    \item Supporto per hash multipli (MD5, SHA-512, ecc.)
+    \item Statistiche server (hit rate, latenza media, throughput)
+    \item Rate limiting per client
+\end{itemize}
+
+\section{Conclusioni}
+
+Il progetto dimostra l'implementazione di un servizio concorrente per il calcolo di hash SHA-256. L'architettura basata su \textbf{thread pool}, \textbf{coda prioritaria} e \textbf{cache condivisa} garantisce:
+
+\begin{itemize}
+    \item \textbf{Efficienza}: riutilizzo di hash già calcolati e velocità di processazione grazie ai thread
+    \item \textbf{Correttezza}: sincronizzazione e nessuna race condition
+    \item \textbf{Scalabilità}: gestione concorrente di client multipli
+\end{itemize}
+
+La difficoltà principale è stata l'implementazione della cache condivisa con attesa di thread multipli, nonostante il mutex e le condition variable mi son dovuto concentrare sulla gestione corretta della sincronizzazione per evitare race condition e crash inattesi.
+
+\section{GitHub}
+
+Il codice sorgente è stato anche caricato su GitHub, con GitHub action che eseguono unit test ogni nuova versione per garantire la correttezza del codice.
+
+\href{https://github.com/mp97dev/SHA256}{Link alla repository}
+
+\end{document}
